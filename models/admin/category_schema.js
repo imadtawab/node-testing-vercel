@@ -7,6 +7,9 @@ const categorySchema = new mongoose.Schema({
     name: {
         type: String
     },
+    slug: {
+        type: String
+    },
     description: {
         type: String
     },

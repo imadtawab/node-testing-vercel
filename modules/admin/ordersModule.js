@@ -4,6 +4,7 @@ const products = require("../../models/admin/product_schema");
 const orders = require("../../models/admin/order_schema");
 const ordersModule = express.Router();
 const jwt = require("jsonwebtoken");
+const rejectError = require("../../utils/rejectError")
 // admin/orders/......
     // s * c     s*c+s
 // count 0     1      2
@@ -34,7 +35,8 @@ ordersModule.get("/", async (req , res) => {
     
     console.log("filters : " , filters);
     orders.find({...filters}).then((orders) => {
-        if (req.query.count && req.query.step) {
+        if (req.query.count && req.query.step && req.query.step !== "all") {
+            console.log(req.query);
             let start = +req.query.step * (+req.query.count - 1)
             let end = (+req.query.step * (+req.query.count - 1)) + +req.query.step
 
@@ -56,9 +58,11 @@ ordersModule.get("/", async (req , res) => {
                 sub_data: {
                     numberTotal: orders.length
                 },
-                data: orders.filter((o,i) => i >= start && i < end)})
+                data: orders.filter((o,i) => i >= start && i < end)
+            })
+            console.log(start , end , 222222222)
     }else{
-        console.log("ff")
+        console.log(orders , 3333333333)
 
         res.json({success: true, 
             sub_data: {
@@ -99,6 +103,26 @@ ordersModule.get("/", async (req , res) => {
     //                 }})
     //     }
     // }).catch(err => console.log(err))
+})
+ordersModule.get("/orders-tracking-status", async (req , res) => {
+    try {
+        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    } catch (error) {
+        console.log(error , "error authentication 5 ....");
+        return res.json({success: false , error: "Authorization is not valid"})
+    }
+    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    console.log(_id , "success authentication 5 ....");
+    orders.find({userId: _id}).then((orders) => {
+        let allStatus = ["all","today","pending","confirmed","shipped","delivered","cancelled","on_hold","delayed","returned"]
+        let resultObject = {}
+        allStatus.forEach(status => {
+            if(status === "all") resultObject[status] = orders.length
+            if(status === "today") resultObject[status] = orders.filter(o => o.createdAt >= new Date().setHours(0,0,0,0)).length
+            if(status !== "all" && status !== "today") resultObject[status] = orders.filter(o => o.current_status.name === status).length
+        })
+        res.json({success: true , data: resultObject})
+    }).catch(err => console.log(err))
 })
 ordersModule.get("/dashboard-order-data1" , async (req , res) => {
     try {
@@ -634,15 +658,65 @@ ordersModule.get("/:id", async (req , res) => {
         if(!order){
             return res.json({success: false , error: "Error 404: Not Found"})
         }
-        if(order.userId !== _id){
-            return res.json({success: false , error: "Error 504: Authorisation falied"})
-        }
+        // if(order.userId !== _id){
+        //     return res.json({success: false , error: "Error 504: Authorisation falied"})
+        // }
         res.json({success: true , data: order , pagination: {
             step: "all",
             numberOfItems: 1,
             currentPagination: 1
         }})
     }).catch(err => res.json({success: false , error: "Error 404: Not Found"}))
+})
+ordersModule.get("/orders-tracking/details/:id", async (req , res) => {
+    try {
+        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    } catch (error) {
+        // console.log(error , "error authentication 9 ....");
+        return res.json({success: false , error: "Authorization is not valid"})
+    }
+    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 9 ....");
+
+    let filters = {userId: _id}
+    console.log(req.query,req.params, "body");
+    // console.log(req.params.status , req.body.id);
+    // return 
+    let allStatus = ["pending","confirmed","shipped","delivered","cancelled","on_hold","delayed","returned"]
+    if(allStatus.indexOf(req.query.status) !== -1) filters["current_status.name"] = req.query.status
+    if(req.query.time === "today") filters.createdAt = {"$gte": new Date().setHours(0,0,0,0)}
+
+    orders.find(filters).then((orders) => {
+        console.log(orders.length , "orders found");
+        // if(!orders){
+        //     return res.json({success: false , error: "Error 404: Not Found"})
+        // }
+        // if(order.userId !== _id){
+        //     return res.json({success: false , error: "Error 504: Authorisation falied"})
+        // }
+        let orderExist = orders.map((o , i) => o._id.toString() === req.params.id ? i : null).filter(a => a !== null)
+        // console.log(orderExist  ,"exist");
+        if(orderExist.length){
+            let itemIndex = orderExist[0]
+            res.json({success: true , data: {
+                    previousItem: itemIndex === 0 ? null : orders[itemIndex - 1]._id,
+                    currentItem: orders[itemIndex],
+                    nextItem: itemIndex === (orders.length - 1) ? null : orders[itemIndex + 1]._id,
+                    currentIndex: itemIndex+1,
+                    numberOfItems: orders.length
+                }
+            })
+            return
+        }
+        console.log("not Exist");
+        res.json({success: true , data: {
+            previousItem: null,
+            currentItem: orders[0],
+            nextItem: orders[1]?._id ? orders[1]._id : null,
+            currentIndex: 1,
+            numberOfItems: orders.length
+        }})
+    }).catch(err => rejectError(req , res , err , "Error: 404 Not Found"))
 })
 ordersModule.post("/new-order",async (req , res) => {
     products.find({"_id": req.body.shoppingProducts.map(p => p.productId)}).then(async (productsSelect) => {
