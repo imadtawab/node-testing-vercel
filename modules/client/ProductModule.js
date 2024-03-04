@@ -46,7 +46,8 @@ productsModule.post("/", auth , (req, res) => {
   products
     .find(filters).limit(req.query?.limit ? +req.query.limit : true)
     .then((products) => {
-      res.json({success: true, data: products});
+      console.log(req.body);
+      res.json({success: true, data: products , filters: req.body});
     })
     .catch((err) => console.log(err));
 });
