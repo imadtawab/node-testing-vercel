@@ -645,6 +645,7 @@ ordersModule.get("/filter", async (req , res) => {
 })
 ordersModule.get("/:id", async (req , res) => {
     console.log(req.cookies._auth);
+    console.log(req.params , 888)
     try {
         await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
     } catch (error) {
@@ -669,6 +670,7 @@ ordersModule.get("/:id", async (req , res) => {
     }).catch(err => res.json({success: false , error: "Error 404: Not Found"}))
 })
 ordersModule.get("/orders-tracking/details/:id", async (req , res) => {
+    console.log(7777);
     try {
         await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
     } catch (error) {

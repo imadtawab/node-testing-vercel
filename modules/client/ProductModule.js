@@ -25,29 +25,43 @@ const auth = (req,res,next) => {
 }
 productsModule.post("/", auth , (req, res) => {
   console.log(req.body,88);
+  let reqFilters = req.body.reqFilters
+  let specialItems = req.body.specialItems
+  if(specialItems) {
+    products
+    .find({_id: specialItems})
+    .then((prdcs => prdcs.sort((a, b) => a.createdAt - b.createdAt).reverse()))
+    .then((products) => {
+      return res.json({success: true, data: products});
+    })
+    .catch((err) => console.log(err));
+    return
+  }
+  console.log(specialItems , 987456);
   let filters= {"productStatus.visibility": "true"}
-  if(req.body?.categorie) filters["categorie._id"] = req.body.categorie
+  if(reqFilters?.categorie) filters["categorie._id"] = reqFilters.categorie
   
-  if(req.body?.attributes){
-    let arrAttributes = Object.keys(req.body.attributes).filter(key => req.body.attributes[key].length !== 0)
+  if(reqFilters?.attributes){
+    let arrAttributes = Object.keys(reqFilters.attributes).filter(key => reqFilters.attributes[key].length !== 0)
     if(arrAttributes.length !== 0) {
     // filters["attributes.attributeId"] = {$in: arrAttributes}
     let arrAttValues = []
     arrAttributes.forEach(key => {
-      arrAttValues.push(...req.body.attributes[key])
+      arrAttValues.push(...reqFilters.attributes[key])
     })
     filters["attributes.attributeValuesId"] = {$in: arrAttValues}
   }
   }
-  if(req.body?.min || req.body?.max) filters["prices.salePrice"] = {}
-  if(req.body?.min) filters["prices.salePrice"].$gte = req.body.min
-  if(req.body?.max) filters["prices.salePrice"].$lte = req.body.max
+  if(reqFilters?.min || reqFilters?.max) filters["prices.salePrice"] = {}
+  if(reqFilters?.min) filters["prices.salePrice"].$gte = reqFilters.min
+  if(reqFilters?.max) filters["prices.salePrice"].$lte = reqFilters.max
   console.log(filters,555);
   products
     .find(filters).limit(req.query?.limit ? +req.query.limit : true)
+    .then((prdcs => prdcs.sort((a, b) => a.createdAt - b.createdAt).reverse()))
     .then((products) => {
-      console.log(req.body);
-      res.json({success: true, data: products , filters: req.body});
+      console.log(reqFilters);
+      res.json({success: true, data: products , filters: reqFilters});
     })
     .catch((err) => console.log(err));
 });
