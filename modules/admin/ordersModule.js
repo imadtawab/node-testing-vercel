@@ -720,7 +720,7 @@ ordersModule.get("/orders-tracking/details/:id", auth , async (req , res) => {
         }})
     }).catch(err => rejectError(req , res , err , "Error: 404 Not Found"))
 })
-ordersModule.post("/new-order", auth ,async (req , res) => {
+ordersModule.post("/new-order" ,async (req , res) => {
     products.find({"_id": req.body.shoppingProducts.map(p => p.productId)}).then(async (productsSelect) => {
         let finalyProducts = productsSelect.map( prod => {
             let userProduct = req.body.shoppingProducts.find(up => up.productId === prod._id.toString())
