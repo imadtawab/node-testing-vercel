@@ -227,24 +227,24 @@ usersModule.post("/login" , (req , res) => {
 })
 
 
-usersModule.all("*", (req, res, next) => {
-    passport.authenticate('jwt', {session: false}, (err, user) => {
-        if(err || !user) {
-            const error = new Error('You are not authorized to access this area')
-            error.status = 401
-            throw error
-        }
-        console.log(user , 555);
-        req.user = user
-        return next()
-    })(req, res, next)
-})
+// usersModule.all("*", (req, res, next) => {
+//     passport.authenticate('jwt', {session: false}, (err, user) => {
+//         if(err || !user) {
+//             const error = new Error('You are not authorized to access this area')
+//             error.status = 401
+//             throw error
+//         }
+//         console.log(user , 555);
+//         req.user = user
+//         return next()
+//     })(req, res, next)
+// })
 // ------------- Protected --------------------------------
-usersModule.post("/test",passport.authenticate('jwt', {session: false}) , (req, res) => {
-    // return res.json({success: true , user, token})
-    console.log(req.user);
-    return res.json({success: 'true'})
-})
+// usersModule.post("/test",passport.authenticate('jwt', {session: false}) , (req, res) => {
+//     // return res.json({success: true , user, token})
+//     console.log(req.user);
+//     return res.json({success: 'true'})
+// })
 usersModule.post("/register/confirm_email/:activationCode" , async (req, res) => {
     console.log(req.params.activationCode)
     const verifyToken = (token) => {
