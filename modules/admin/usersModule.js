@@ -488,17 +488,17 @@ usersModule.put("/settings/profile/update" , auth , storage.single("avatar"), as
             }
 
         }
-            try {
-                await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-            } catch (error) {
-                // console.log(error , "error authentication 2 ....");
-                return rejectError(req , res , error , "Authorization is not valid")
-                // return res.json({success: false , error: "Authorization is not valid"})
-            }
-            const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-            console.log(_id , "success authentication 2 ....");
+            // try {
+            //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+            // } catch (error) {
+            //     // console.log(error , "error authentication 2 ....");
+            //     return rejectError(req , res , error , "Authorization is not valid")
+            //     // return res.json({success: false , error: "Authorization is not valid"})
+            // }
+            // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+            // console.log(_id , "success authentication 2 ....");
 
-    users.updateOne({_id}, {...req.body, avatar: req.body?.emptyAvatar ? "" : req.file?.filename}).then(docs => {
+    users.updateOne({_id: req.userId}, {...req.body, avatar: req.body?.emptyAvatar ? "" : req.file?.filename}).then(docs => {
         console.log(docs);
         // req.file?.filename && 
         if (req.body?.oldAvatar) {
@@ -536,16 +536,16 @@ usersModule.put("/settings/password/update" ,auth , async (req , res) => {
         res.json({success:false, error: err.details[0].message})
         return
      }
-        try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        // console.log(error , "error authentication 3 ....");
-        return rejectError(req , res , error , "Authorization is not valid")
-        // return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    //     try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     // console.log(error , "error authentication 3 ....");
+    //     return rejectError(req , res , error , "Authorization is not valid")
+    //     // return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
     console.log(_id , "success authentication 3 ....");
-    users.findById({_id}).then(user => {
+    users.findById({_id: req.userId}).then(user => {
         bcrypt.compare(req.body.current_password,user.password).then((pass_checked) => {
             if (pass_checked) {
                 console.log(pass_checked);
@@ -569,16 +569,16 @@ usersModule.put("/settings/password/update" ,auth , async (req , res) => {
 
 // get user for testing
 usersModule.get("/userrr" , storage.single("avatar"), async (req , res) => {
-        try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        // console.log(error , "error authentication 4 ....");
-        return rejectError(req , res , error , "Authorization is not valid")
-        // return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 4 ....");
-    users.findById({_id} , {_id: true , email: true , userName: true, avatar: true , password: true}).then(user => {
+    //     try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     // console.log(error , "error authentication 4 ....");
+    //     return rejectError(req , res , error , "Authorization is not valid")
+    //     // return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 4 ....");
+    users.findById({_id: req.userId} , {_id: true , email: true , userName: true, avatar: true , password: true}).then(user => {
         res.json(user)
     })
 })
