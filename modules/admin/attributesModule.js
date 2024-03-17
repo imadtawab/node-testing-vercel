@@ -10,17 +10,18 @@ const jwt = require("jsonwebtoken")
 // fs
 const fs  = require("fs");
 const categories = require("../../models/admin/category_schema");
+const auth = require("../../utils/auth");
 
 // // cors
 // const cors = require('cors')
 // app.use(cors())
 
 // "/admin/account/attributes"
-attributesModule.get("/" , async (req , res) => {
+attributesModule.get("/" , auth, async (req , res) => {
     console.log(req.body,req.params);
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    console.log(_id , 99999999999999999)
-    attributes.find({userId: _id}).then((attributes) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    // console.log(_id , 99999999999999999)
+    attributes.find({userId: req.userId}).then((attributes) => {
         console.log("hello attributes ..." ,attributes);
         return res.json({success: true , data: attributes})
     }).catch(err => {
@@ -28,10 +29,10 @@ attributesModule.get("/" , async (req , res) => {
         return res.json({success: false , error: "Failed To get Attributes"})
     })
 })
-attributesModule.post("/new" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+attributesModule.post("/new" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
     new attributes({
-        userId: _id,
+        userId: req.userId,
         unique_name: req.body.uniqueName,
         public_name: req.body.name,
         type: req.body.type,
@@ -45,19 +46,19 @@ attributesModule.post("/new" , async (req , res) => {
         return res.json({success: false , error: "Failed To Add Attribute"})
     })
 })
-attributesModule.delete("/delete/:id" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+attributesModule.delete("/delete/:id" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
 
-    attributes.deleteOne({userId: _id , _id: req.params.id}).then(docs => {
+    attributes.deleteOne({userId: req.userId , _id: req.params.id}).then(docs => {
         return res.json({success: true , _id: req.params.id})
     }).catch(err => {
         console.log(err)
         return res.json({success: false , error: "Failed To Delete Attribute"})
     })
 })
-attributesModule.put("/change-visibility" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    attributes.updateOne({userId: _id , _id: req.body.id} , {
+attributesModule.put("/change-visibility" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    attributes.updateOne({userId: req.userId , _id: req.body.id} , {
         publish : (req.body.visibility == "true" ? "false" : "true")
     }).then(docs => {
         return res.json({success: true , _id:req.body.id , visibility:req.body.visibility})
@@ -92,8 +93,8 @@ attributesModule.put("/change-visibility" , async (req , res) => {
     //     return res.json({success: false , error: "Failed To  Changed Visisblity"})
     // })
 })
-attributesModule.put("/update/:_id" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+attributesModule.put("/update/:_id" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
     let newAttr = {
         unique_name: req.body.uniqueName,
         public_name: req.body.name,
@@ -101,7 +102,7 @@ attributesModule.put("/update/:_id" , async (req , res) => {
         publish: req.body.publish,
         values: req.body.arrayValues
     }
-    attributes.updateOne({userId: _id , _id: req.params._id}, newAttr).then(docs => {
+    attributes.updateOne({userId: req.userId , _id: req.params._id}, newAttr).then(docs => {
         // change in product
         
         return res.json({success: true , newAttr , _id: req.params._id})
@@ -133,9 +134,9 @@ attributesModule.put("/update/:_id" , async (req , res) => {
     //     return res.json({success: false , error: "Failed To Update Attribute"})
     // })
 })
-attributesModule.put("/update-many-status" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    attributes.updateMany({userId: _id, _id: req.body.items} , {
+attributesModule.put("/update-many-status" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    attributes.updateMany({userId: req.userId, _id: req.body.items} , {
         publish: req.body.status
     }).then(docs => {
         return res.json({success: true , items: req.body.items , status: req.body.status})
@@ -161,9 +162,9 @@ attributesModule.put("/update-many-status" , async (req , res) => {
     //     return res.json({success: false , error: "Failed To  Changed Visisblity"})
     // })
   })
-attributesModule.put("/delete-many-status" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    attributes.deleteMany({userId: _id, _id: req.body.items}).then(docs => {
+attributesModule.put("/delete-many-status" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    attributes.deleteMany({userId: req.userId, _id: req.body.items}).then(docs => {
         return res.json({success: true, items: req.body.items})
     }).catch(err => {
         return res.json({success: false , error: "Failed To  Changed Visisblity"})

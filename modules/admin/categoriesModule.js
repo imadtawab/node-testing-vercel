@@ -10,7 +10,8 @@ const jwt = require("jsonwebtoken")
 const fs  = require("fs");
 const products = require("../../models/admin/product_schema");
 // reject errors
-const rejectError = require("../../utils/rejectError")
+const rejectError = require("../../utils/rejectError");
+const auth = require("../../utils/auth");
 
 // "/admin/account/categories"
 
@@ -26,9 +27,9 @@ const storage = multer({
     },
 }),
 });
-categoriesModule.get("/" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    categories.find({userId: _id}).then((categories) => {
+categoriesModule.get("/" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    categories.find({userId: req.userId}).then((categories) => {
         console.log("hello categories ..." ,categories);
         return res.json({success: true , data: categories})
     }).catch(err => {
@@ -36,12 +37,12 @@ categoriesModule.get("/" , async (req , res) => {
         return res.json({success: false , error: "Failed To get Categories"})
     })
 })
-categoriesModule.post("/new" , storage.single("image"), async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    console.log(_id, 333);
-    categories.findOne({userId : _id , slug: req.body.slug.trim().split(" ").join("-")}).then(existSlug => {
+categoriesModule.post("/new" , auth, storage.single("image"), async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    // console.log(_id, 333);
+    categories.findOne({userId : req.userId , slug: req.body.slug.trim().split(" ").join("-")}).then(existSlug => {
         new categories({
-            userId: _id,
+            userId: req.userId,
             name: req.body.name,
             slug: existSlug ? (req.body.slug.trim().split(" ").join("-") + "-" + new Date().getTime()) : req.body.slug.trim().split(" ").join("-"),
             description: req.body.description,
@@ -56,10 +57,10 @@ categoriesModule.post("/new" , storage.single("image"), async (req , res) => {
         })
     }).catch(err => rejectError(req , res , err , null))
 })
-categoriesModule.delete("/delete/:id/:image" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET) 
+categoriesModule.delete("/delete/:id/:image" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET) 
 
-    categories.deleteOne({userId: _id, _id: req.params.id}).then(docs => {
+    categories.deleteOne({userId: req.userId, _id: req.params.id}).then(docs => {
         console.log(docs, 666666);
         if(req.params.image !== "undefined"){
             const path = `./public/uploads/${req.params.image}`
@@ -80,9 +81,9 @@ categoriesModule.delete("/delete/:id/:image" , async (req , res) => {
         return res.json({success: false , error: "Failed To Delete Categorie"})
     })
 })
-categoriesModule.put("/change-visibility" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    categories.updateOne({userId:_id , _id:req.body.id} , {
+categoriesModule.put("/change-visibility" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    categories.updateOne({userId:req.userId , _id:req.body.id} , {
         publish : (req.body.visibility == "true" ? "false" : "true")
     }).then(docs => {
             console.log(docs,10);
@@ -92,8 +93,8 @@ categoriesModule.put("/change-visibility" , async (req , res) => {
         return res.json({success: false , error: "Failed To Changed Visisblity"})
     })
 })
-categoriesModule.put("/update/:_id/:image" ,storage.single("image"), async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+categoriesModule.put("/update/:_id/:image" , auth,storage.single("image"), async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
     console.log(req.body , 6666);
     categories.findOne({slug: req.body.slug.trim().split(" ").join("-")}).then(async existSlug => {
         function checkIfKeyExists(key) {
@@ -125,7 +126,7 @@ categoriesModule.put("/update/:_id/:image" ,storage.single("image"), async (req 
                 newCateg.image = ""
             }
         }
-        categories.updateOne({userId: _id , _id: req.params._id} , newCateg).then(async docs => {
+        categories.updateOne({userId: req.userId , _id: req.params._id} , newCateg).then(async docs => {
             console.log(docs,10);
             if((req?.file?.filename || req.body.delete) && req.params.image !== "undefined"){
                 const path = `./public/uploads/${req.params.image}`
@@ -156,9 +157,9 @@ categoriesModule.put("/update/:_id/:image" ,storage.single("image"), async (req 
         })
     })
 })
-categoriesModule.put("/update-many-status" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    categories.updateMany({userId: _id, _id: req.body.items} , {
+categoriesModule.put("/update-many-status" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    categories.updateMany({userId: req.userId, _id: req.body.items} , {
         publish: req.body.status
     }).then((docs) => {
         return res.json({success: true, items: req.body.items , status: req.body.status})
@@ -166,9 +167,9 @@ categoriesModule.put("/update-many-status" , async (req , res) => {
         return res.json({success: false , error: "Failed To Changed Visisblity"})
     })
 })
-categoriesModule.put("/delete-many-status" , async (req , res) => {
-    const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
-    categories.find({userId: _id ,_id: req.body.items}).then(async catg => {
+categoriesModule.put("/delete-many-status" , auth, async (req , res) => {
+    // const {_id} = await jwt.verify(req.cookies._auth,process.env.JWT_SECRET)
+    categories.find({userId: req.userId ,_id: req.body.items}).then(async catg => {
         let pathNames = await catg.map(c => c.image ? `./public/uploads/${c.image}` : "")
         console.log(pathNames);
         await pathNames.forEach(path => {
@@ -185,26 +186,26 @@ categoriesModule.put("/delete-many-status" , async (req , res) => {
                }
 
         })
-        categories.deleteMany({userId: _id, _id: req.body.items}).then(async (docs) => {
+        categories.deleteMany({userId: req.userId, _id: req.body.items}).then(async (docs) => {
             return res.json({success: true, items: req.body.items})
         }).catch(err => {
             return res.json({success: false , error: "Failed To Changed Visisblity"})
         })
     })
 })
-categoriesModule.post("/check-slug" , async (req, res) => {
-    try {
-      await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-  } catch (error) {
-      console.log(error , "error authentication 11 ....");
-      return res.json({success: false , error: "Authorization is not valid"})
-  }
-  const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+categoriesModule.post("/check-slug" , auth, async (req, res) => {
+//     try {
+//       await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+//   } catch (error) {
+//       console.log(error , "error authentication 11 ....");
+//       return res.json({success: false , error: "Authorization is not valid"})
+//   }
+//   const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
     console.log(req.body);
     if(req.body.slug.trim().split(" ").join("-") === ""){
       return res.json({success: true , data: {checking: false , message: "Slug must not be blank"}})
     }
-    categories.findOne({userId : _id , slug: req.body.slug.trim().split(" ").join("-")}).then(existSlug => {
+    categories.findOne({userId : req.userId , slug: req.body.slug.trim().split(" ").join("-")}).then(existSlug => {
       // console.log(existKey);
       if(existSlug){
         if(req.body._id){

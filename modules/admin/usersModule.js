@@ -11,10 +11,41 @@ const jwt = require("jsonwebtoken")
 const fs  = require("fs")
 // joi
 const Joi = require("joi")
+// passport
+const passport = require('passport')
+// const LocalStrategy = require('passport-local').Strategy
+// passport.use(new LocalStrategy((email , password , done) => {
+//         console.log(email , password , "**************");
+//         users.findOne({email : email , isActive: true}).then((user) => {
+//         if(user){
+//             bcrypt.compare(password , user.password ).then(async (pass) =>{
+//                 if(pass){
+//                     // const token = await jwt.sign(
+//                     //     {_id: user._id},
+//                     //     process.env.JWT_SECRET,
+//                     //     {expiresIn:"1d"}
+//                     // );
+//                     // res.cookie("token", token)
+//                     // return res.json({success: true , user, token})
+//                     return done(null, user);
+//                 }else{
+//                     rejectError(req , res , null , "Email or password is invalid")
+//                     return done(null, false, { message: "Email or password is invalid" });
+//                     // return res.json({success: false , error: "Email or password is invalid"})
+//                 }
+//             })
+//         }else{
+//             rejectError(req , res , null , "Email or password is invalid")
+//             return done(null , false, {message: "Email or password is invalid"})
+//         //    return res.json({success: false , error: "Email or password is invalid"})
+//         }
+//     }).catch(err => rejectError(res , res , err))
+// }))
 
 // nodemailer
 const nodemailer = require("nodemailer");
 const rejectError = require("../../utils/rejectError");
+const auth = require("../../utils/auth");
 
 
 const transport = nodemailer.createTransport({
@@ -34,24 +65,24 @@ usersModule.get("/all" , (req , res) => {
 
 
 })
-usersModule.get("/auth/addAuthToState",async (req , res) => {
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        // console.log(error , "error authentication 1 ....");
-        return rejectError(req , res , error , "Authorization is not valid")
-        // return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 1 ....");
-    users.findById(_id,{password: false}).then((user) => {
+usersModule.get("/auth/addAuthToState",auth ,async (req , res) => {
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     // console.log(error , "error authentication 1 ....");
+    //     return rejectError(req , res , error , "Authorization is not valid")
+    //     // return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 1 ....");
+    console.log("object",5555555);
+    users.findById(req.userId,{password: false}).then((user) => {
         if(user){
             return res.json({success: true , user , token: req.cookies?._auth})
         }else{
             rejectError(req , res , null , "PLease Login In Your Account")
             // return res.json({success: false , error: "PLease Login In Your Account"})
         }
-        console.log(docs);
     }).catch(err => console.log(err))
 })
 let schemaValidationRegister = Joi.object({
@@ -129,6 +160,91 @@ usersModule.post("/register" , async (req , res) => {
     }).catch(err => console.log(err))
     
 })
+
+
+// passport.use(new LocalStrategy({ usernameField: 'email' } , (email , password , done) => {
+//     console.log(email , password , "**************");
+//     users.findOne({email : email , isActive: true}).then((user) => {
+//     if(user){
+//         bcrypt.compare(password , user.password ).then(async (pass) =>{
+//             if(pass){
+
+//                 return done(null, user);
+//             }else{
+//                 rejectError(req , res , null , "Email or password is invalid")
+//                 return done(null, false, { message: "Email or password is invalid" });
+//                 // return res.json({success: false , error: "Email or password is invalid"})
+//             }
+//         })
+//     }else{
+//         rejectError(req , res , null , "Email or password is invalid")
+//         return done(null , false, {message: "Email or password is invalid"})
+//     //    return res.json({success: false , error: "Email or password is invalid"})
+//     }
+// }).catch(err => rejectError(res , res , err))
+// }))
+
+// ,passport.authenticate('local', {session: false})
+
+
+
+
+usersModule.post("/login" , (req , res) => {
+    // const token = jwt.sign({_id: req.user._id}, process.env.JWT_SECRET , 
+    //     // {expiresIn:"1d"}
+    //     // {email: req.user.email}
+    //     )
+    //     console.log(token , "**************");
+    //     res.cookie("token", token)
+    //     return res.json({success: true , user: req.user, token})
+    // console.log(req.body);
+    users.findOne({email : req.body.email , isActive: true}).then((user) => {
+        console.log(req.body , "body");
+        if(user){
+            bcrypt.compare(req.body.password , user.password ).then(async (pass) =>{
+                if(pass){
+                    const token = await jwt.sign(
+                        {_id: user._id},
+                        process.env.JWT_SECRET,
+                        {expiresIn:"1d"}
+                    );
+                    res.cookie("_auth", token)
+                    const userObj = user.toObject()
+                    delete userObj.password
+                    return res.json({success: true , user:userObj, token})
+                }else{
+                    return rejectError(req , res , null , "Email or password is invalidp")
+                    // return res.json({success: false , error: "Email or password is invalid"})
+                }
+            })
+        }else{
+            console.log(user);
+            return rejectError(req , res , null , "Email or password is invalide")
+        //    return res.json({success: false , error: "Email or password is invalid"})
+        }
+    }).catch(err => console.log(err))
+    
+})
+
+
+usersModule.all("*", (req, res, next) => {
+    passport.authenticate('jwt', {session: false}, (err, user) => {
+        if(err || !user) {
+            const error = new Error('You are not authorized to access this area')
+            error.status = 401
+            throw error
+        }
+        console.log(user , 555);
+        req.user = user
+        return next()
+    })(req, res, next)
+})
+// ------------- Protected --------------------------------
+usersModule.post("/test",passport.authenticate('jwt', {session: false}) , (req, res) => {
+    // return res.json({success: true , user, token})
+    console.log(req.user);
+    return res.json({success: 'true'})
+})
 usersModule.post("/register/confirm_email/:activationCode" , async (req, res) => {
     console.log(req.params.activationCode)
     const verifyToken = (token) => {
@@ -202,33 +318,9 @@ usersModule.post("/register/resend-email" , async (req, res) => {
         }
     }).catch(err => console.log(err))
 })
-
-
-usersModule.post("/login" , (req , res) => {
-    console.log(req.body);
-    users.findOne({email : req.body.email , isActive: true}).then((user) => {
-        if(user){
-            bcrypt.compare(req.body.password , user.password ).then(async (pass) =>{
-                if(pass){
-                    const token = await jwt.sign(
-                        {_id: user._id},
-                        process.env.JWT_SECRET,
-                        {expiresIn:"1d"}
-                    );
-                    res.cookie("token", token)
-                    return res.json({success: true , user, token})
-                }else{
-                    return rejectError(req , res , null , "Email or password is invalid")
-                    // return res.json({success: false , error: "Email or password is invalid"})
-                }
-            })
-        }else{
-            return rejectError(req , res , null , "Email or password is invalid")
-        //    return res.json({success: false , error: "Email or password is invalid"})
-        }
-    }).catch(err => console.log(err))
-    
-})
+// usersModule.get('/protected', passport.authenticate('jwt', { session: false }), (req, res) => {
+//     return res.json({success: 'You are authenticated!'})
+// });
 usersModule.post("/login/forgot-password" , async (req, res) => {
     console.log(req.body.email)
      // Create activationCode Token
@@ -371,7 +463,7 @@ const storage = multer({
     }),
   });
 
-usersModule.put("/settings/profile/update" , storage.single("avatar"), async (req , res) => {
+usersModule.put("/settings/profile/update" , auth , storage.single("avatar"), async (req , res) => {
     console.log(req.body);
 
 
@@ -410,8 +502,8 @@ usersModule.put("/settings/profile/update" , storage.single("avatar"), async (re
         console.log(docs);
         // req.file?.filename && 
         if (req.body?.oldAvatar) {
-            // http://localhost:3500/media/
-            let path = `./public/uploads/${req.body?.oldAvatar.split("http://localhost:3500/media/",2)[1]}`
+            // SERVER_DOMAIN/media/
+            let path = `./public/uploads/${req.body?.oldAvatar.split(`${req.headers.host}/media/`,2)[1]}`
             fs.unlink(path,(err) => {
                 if (err) {
                     console.log(err,"not deleted ???")
@@ -436,7 +528,7 @@ let schemaValidationUpdatePassword = Joi.object({
     }),
     confirm_password: Joi.ref('new_password'),
   })
-usersModule.put("/settings/password/update" , async (req , res) => {
+usersModule.put("/settings/password/update" ,auth , async (req , res) => {
     try {
         await schemaValidationUpdatePassword.validateAsync(req.body);
     }

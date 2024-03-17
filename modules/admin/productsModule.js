@@ -10,31 +10,23 @@ const jwt = require("jsonwebtoken")
 const multer = require("multer");
 const users = require("../../models/admin/user_schema");
 const { Collection } = require("mongoose");
+const rejectError = require("../../utils/rejectError");
+const auth = require("../../utils/auth");
 
 // '/admin/products'
-const auth = (req,res,next) => {
-  // jwt.verify(req.cookies.token, process.env.JWT_SECRET , (err, decoded) => {
-  //   if(err){
-  //     console.log(err);
-  //     res.json({success: false, message: err})
-  //     return
-  //   }
-  //   console.log(decoded,693) // bar
-  // })
-  next()
-}
-productsModule.get("/", auth , async (req, res) => {
-  // console.log(req.query,111);
-  try {
-      await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-  } catch (error) {
-      console.log(error , "error authentication 5 ....");
-      return res.json({success: false , error: "Authorization is not valid"})
-  }
-  const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-  // console.log(_id , "success authentication 5 ....");
 
-  let filters = {userId: _id}
+productsModule.get("/", auth , async (req, res) => {
+  // console.log(req.rawHeaders[1] , req.rawHeaders[15] , req.headers.host , 55);
+  // console.log(req.query,111);
+  // try {
+  //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+  // } catch (error) {
+  //     console.log(error , "error authentication 5 ....");
+  //     return res.json({success: false , error: "Authorization is not valid"})
+  // }
+  // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+  // console.log(_id , "success authentication 5 ....");
+  let filters = {userId: req.userId}
   if(req.query.search) filters["name"] = {"$regex" : new RegExp(`.*${req.query.search}.*`, 'i')}
   if(req.query.status) filters["productStatus.status"] = req.query.status
   if(req.query.visibility) filters["productStatus.visibility"] = req.query.visibility
@@ -43,7 +35,7 @@ productsModule.get("/", auth , async (req, res) => {
   if(req.query.from) filters.createdAt["$gte"] = req.query.from
   if(req.query.to) filters.createdAt["$lte"] = new Date(req.query.to).setHours(24 , 60 , 60 , 60)
   
-  console.log("filters : " , filters);
+  // console.log("filters : " , filters);
   products
     .find({...filters})
     .then((prdcs => prdcs.sort((a, b) => a.createdAt - b.createdAt).reverse()))
@@ -106,6 +98,7 @@ productsModule.get("/:id", auth , (req, res) => {
   products
     .findById({_id: req.params.id})
     .then(async (product) => {
+      console.log(product , 65)
       attributes.find({userId: product.userId}).then((attributes) => {
         res.json({product, attributes});
     }).catch(err => console.log(err))
@@ -123,13 +116,13 @@ const storage = multer({
   }),
 });
 productsModule.post("/new-product", auth , storage.array("images"), async (req, res) => {
-  try {
-    await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-} catch (error) {
-    console.log(error , "error authentication 11 ....");
-    return res.json({success: false , error: "Authorization is not valid"})
-}
-const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+//   try {
+//     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+// } catch (error) {
+//     console.log(error , "error authentication 11 ....");
+//     return res.json({success: false , error: "Authorization is not valid"})
+// }
+// const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
 console.log(req.body.urlKey.split(" ").join("-") , "boooooddddddddddyyyyyyy");
 const {
   name,
@@ -148,7 +141,7 @@ const {
   quantite,
 } = req.body;
 
-  products.findOne({userId : _id , "searchEngineOptimize.urlKey": req.body.urlKey.trim().split(" ").join("-")}).then(existKey => {
+  products.findOne({userId : req.userId , "searchEngineOptimize.urlKey": req.body.urlKey.trim().split(" ").join("-")}).then(existKey => {
     console.log(existKey);
     // return res.json({success: false , error: "wak wak"})
 
@@ -177,7 +170,7 @@ const {
       },
       quantite,
       variants: [],
-      userId: _id
+      userId: req.userId
     })
       .save()
       .then((docs) => {
@@ -188,18 +181,18 @@ const {
 
 });
 productsModule.post("/check-url-key" , auth , async (req, res) => {
-  try {
-    await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-} catch (error) {
-    console.log(error , "error authentication 11 ....");
-    return res.json({success: false , error: "Authorization is not valid"})
-}
-const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+//   try {
+//     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+// } catch (error) {
+//     console.log(error , "error authentication 11 ....");
+//     return res.json({success: false , error: "Authorization is not valid"})
+// }
+// const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
   console.log(req.body);
   if(req.body.urlKey.trim().split(" ").join("-") === ""){
     return res.json({success: true , data: {checking: false , message: "Slug must not be blank"}})
   }
-  products.findOne({userId : _id , "searchEngineOptimize.urlKey": req.body.urlKey.trim().split(" ").join("-")}).then(existKey => {
+  products.findOne({userId : req.userId , "searchEngineOptimize.urlKey": req.body.urlKey.trim().split(" ").join("-")}).then(existKey => {
     // console.log(existKey);
     if(existKey){
       if(req.body._id){

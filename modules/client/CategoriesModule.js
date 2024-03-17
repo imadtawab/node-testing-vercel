@@ -11,12 +11,11 @@ const users = require("../../models/admin/user_schema");
 
 // /client/categories
 categoriesModule.get("/" , (req, res) => {
-  console.log("object");
   products.find({"productStatus.visibility": "true"}).then(async products => {
-    console.log(products.map(p => p.categorie._id));
+    // {_id: products.map(p => p.categorie._id)} , {_id:true, userId:true, name:true, description:true, image:true, slug:true}
     categories.find({_id: products.map(p => p.categorie._id)} , {_id:true, userId:true, name:true, description:true, image:true, slug:true}).then(catgs => {
-    // res.json(catgs)
-    // return
+      // res.json(catgs)
+      // return
     let findCategories = catgs.map(c => {
       const {_id, userId, name, description, image, slug} = c
       return {_id, userId, name, description, image, slug , number: 1}

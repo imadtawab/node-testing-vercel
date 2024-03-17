@@ -4,7 +4,8 @@ const products = require("../../models/admin/product_schema");
 const orders = require("../../models/admin/order_schema");
 const ordersModule = express.Router();
 const jwt = require("jsonwebtoken");
-const rejectError = require("../../utils/rejectError")
+const rejectError = require("../../utils/rejectError");
+const auth = require("../../utils/auth");
 // admin/orders/......
     // s * c     s*c+s
 // count 0     1      2
@@ -13,19 +14,18 @@ const rejectError = require("../../utils/rejectError")
 // pagination items : for => start , =< end
 // length = 40
 // const numberOfItems = length / step = 40 / 5 = 8
-
-ordersModule.get("/", async (req , res) => {
+ordersModule.get("/", auth , async (req , res) => {
     console.log(req.query,111);
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        console.log(error , "error authentication 5 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 5 ....");
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     console.log(error , "error authentication 5 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 5 ....");
 
-    let filters = {userId: _id}
+    let filters = {userId: req.userId}
 
     if(req.query.status) filters["current_status.name"] = req.query.status
     if(req.query.from || req.query.to) filters.createdAt = {}
@@ -104,16 +104,16 @@ ordersModule.get("/", async (req , res) => {
     //     }
     // }).catch(err => console.log(err))
 })
-ordersModule.get("/orders-tracking-status", async (req , res) => {
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        console.log(error , "error authentication 5 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 5 ....");
-    orders.find({userId: _id}).then((orders) => {
+ordersModule.get("/orders-tracking-status", auth , async (req , res) => {
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     console.log(error , "error authentication 5 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 5 ....");
+    orders.find({userId: req.userId}).then((orders) => {
         let allStatus = ["all","today","pending","confirmed","shipped","delivered","cancelled","on_hold","delayed","returned"]
         let resultObject = {}
         allStatus.forEach(status => {
@@ -124,16 +124,16 @@ ordersModule.get("/orders-tracking-status", async (req , res) => {
         res.json({success: true , data: resultObject})
     }).catch(err => console.log(err))
 })
-ordersModule.get("/dashboard-order-data1" , async (req , res) => {
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        console.log(error , "error authentication 6 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 6 ....");
-    orders.find({userId: _id}).then(async (orders) => {
+ordersModule.get("/dashboard-order-data1" , auth , async (req , res) => {
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     console.log(error , "error authentication 6 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 6 ....");
+    orders.find({userId: req.userId}).then(async (orders) => {
         // Get the current date
         let currentDate = new Date();
 
@@ -307,16 +307,16 @@ ordersModule.get("/dashboard-order-data1" , async (req , res) => {
 
     }).catch(err => console.log(err))
 })
-ordersModule.get("/dashboard-order-data", async (req, res) => {
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        console.log(error , "error authentication 7 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 7 ....");
-    orders.find({userId: _id}).then((orders) => {
+ordersModule.get("/dashboard-order-data", auth , async (req, res) => {
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     console.log(error , "error authentication 7 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 7 ....");
+    orders.find({userId: req.userId}).then((orders) => {
         function filterOrdersByPeriods(startPeriod, endPeriod) {
             if (startPeriod && endPeriod) {
                 return orders.filter(order => order.addedIn >= startPeriod && order.addedIn <= endPeriod)
@@ -589,17 +589,17 @@ ordersModule.get("/dashboard-order-data", async (req, res) => {
         // }})
     }).catch(err => console.log(err))
 })
-ordersModule.get("/filter", async (req , res) => {
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        console.log(error , "error authentication 8 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 8 ....");
+ordersModule.get("/filter", auth , async (req , res) => {
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     console.log(error , "error authentication 8 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 8 ....");
     console.log(req.query);
-    let filters = {userId: _id}
+    let filters = {userId: req.userId}
 
     if(req.query.status) filters["current_status.name"] = req.query.status
     if(req.query.from || req.query.to) filters.createdAt = {}
@@ -643,17 +643,17 @@ ordersModule.get("/filter", async (req , res) => {
     //     res.json({success: true , subData: orders, data: orders})
     // }).catch(err => console.log(err))
 })
-ordersModule.get("/:id", async (req , res) => {
+ordersModule.get("/:id", auth , async (req , res) => {
     console.log(req.cookies._auth);
     console.log(req.params , 888)
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        console.log(error , "error authentication 9 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    console.log(_id , "success authentication 9 ....");
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     console.log(error , "error authentication 9 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // console.log(_id , "success authentication 9 ....");
     orders.findById(req.params.id).then((order) => {
         // console.log(order);
         if(!order){
@@ -669,18 +669,18 @@ ordersModule.get("/:id", async (req , res) => {
         }})
     }).catch(err => res.json({success: false , error: "Error 404: Not Found"}))
 })
-ordersModule.get("/orders-tracking/details/:id", async (req , res) => {
-    console.log(7777);
-    try {
-        await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
-    } catch (error) {
-        // console.log(error , "error authentication 9 ....");
-        return res.json({success: false , error: "Authorization is not valid"})
-    }
-    const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+ordersModule.get("/orders-tracking/details/:id", auth , async (req , res) => {
+    // console.log(7777);
+    // try {
+    //     await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
+    // } catch (error) {
+    //     // console.log(error , "error authentication 9 ....");
+    //     return res.json({success: false , error: "Authorization is not valid"})
+    // }
+    // const {_id} = await jwt.verify(req.cookies?._auth,process.env.JWT_SECRET)
     // console.log(_id , "success authentication 9 ....");
 
-    let filters = {userId: _id}
+    let filters = {userId: req.userId}
     console.log(req.query,req.params, "body");
     // console.log(req.params.status , req.body.id);
     // return 
@@ -720,7 +720,7 @@ ordersModule.get("/orders-tracking/details/:id", async (req , res) => {
         }})
     }).catch(err => rejectError(req , res , err , "Error: 404 Not Found"))
 })
-ordersModule.post("/new-order",async (req , res) => {
+ordersModule.post("/new-order", auth ,async (req , res) => {
     products.find({"_id": req.body.shoppingProducts.map(p => p.productId)}).then(async (productsSelect) => {
         let finalyProducts = productsSelect.map( prod => {
             let userProduct = req.body.shoppingProducts.find(up => up.productId === prod._id.toString())
@@ -977,7 +977,7 @@ ordersModule.post("/new-order",async (req , res) => {
         // console.log(product);
     // }).catch(err => res.json({success: false , error: "Failed To Place Order"}))
 })
-ordersModule.put("/change-order-status", (req , res) => {
+ordersModule.put("/change-order-status", auth , (req , res) => {
     console.log(req.body);
     orders.findById(req.body.orderId).then((order) => {
         order.status = [ ...order.status ,{
@@ -995,7 +995,7 @@ ordersModule.put("/change-order-status", (req , res) => {
         }).catch(err => console.log(err))
     }).catch(err => console.log(err))
 })
-ordersModule.put("/delete-order-status", (req , res) => {
+ordersModule.put("/delete-order-status", auth , (req , res) => {
     console.log(req.body);
     orders.findById(req.body.orderId).then((order) => {
         order.status = order.status.filter((s,index) => index !== req.body.statusIndex)
@@ -1008,7 +1008,7 @@ ordersModule.put("/delete-order-status", (req , res) => {
     }).catch(err => console.log(err))
 })
 
-ordersModule.put("/new-personal-note", (req , res) => {
+ordersModule.put("/new-personal-note", auth , (req , res) => {
     console.log(req.body,5);
     orders.findById(req.body.orderId).then((order) => {
         order.personal_Notes = [...order.personal_Notes , req.body.personalNotes]
@@ -1019,13 +1019,13 @@ ordersModule.put("/new-personal-note", (req , res) => {
         }).catch(err => console.log(err))
     }).catch(err => console.log(err))
 })
-ordersModule.delete("/delete-order/:id" , (req , res) => {
+ordersModule.delete("/delete-order/:id" , auth , (req , res) => {
     console.log(req.params.id);
     orders.deleteOne({_id: req.params.id}).then((docs) => {
             res.json({success: true , data: docs})
     }).catch(err => console.log(err))
 })
-ordersModule.put("/update-many-status" , (req , res) => {
+ordersModule.put("/update-many-status" , auth , (req , res) => {
     orders.updateMany({"_id": req.body.items} , {
          $push: { status: {
             name: req.body.status,
@@ -1040,9 +1040,9 @@ ordersModule.put("/update-many-status" , (req , res) => {
       res.json({success: true , data: req.body})
     }).catch(err => console.log(err))
   })
-ordersModule.put("/delete-many-status" , (req , res) => {
-orders.deleteMany({"_id": req.body.items}).then((prdcs) => {
-    res.json({success: true , data: req.body})
-}).catch(err => console.log(err))
+ordersModule.put("/delete-many-status" , auth , (req , res) => {
+    orders.deleteMany({"_id": req.body.items}).then((prdcs) => {
+        res.json({success: true , data: req.body})
+    }).catch(err => console.log(err))
 })
 module.exports = ordersModule;
