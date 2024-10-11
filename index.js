@@ -64,6 +64,6 @@ app.get("/media/:img" , (req , res) => {
 // 404 
 app.all("*", (req,res)=>{
     return res.status(404).json({
-        message: "Page Not Found!"
+        message: "Page Not Found!!"
     })
 });
