@@ -16,6 +16,7 @@ app.use(cors({
         /^https:\/\/[a-z0-9]+\.react-testing-vercel-five.vercel.app/
     ],
     // origin: [process.env.CLIENT_DOMAINE],
+    
     methods: ["GET","POST","PUT","PATCH","DELETE"],
     credentials: true
 }))
