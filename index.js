@@ -10,6 +10,7 @@ require('dotenv').config();
 
 // cors
 const cors = require('cors')
+
 app.use(cors({
     origin: [
         /^https:\/\/react-testing-vercel-five.vercel.app/,
