@@ -13,8 +13,8 @@ const cors = require('cors')
 
 app.use(cors({
     origin: [
-        /^https:\/\/react-testing-vercel-five.vercel.app/,
-        /^https:\/\/[a-z0-9]+\.react-testing-vercel-five.vercel.app/
+    /^https:\/\/react-testing-vercel-five.vercel.app$/,
+    /^https:\/\/[a-z0-9]+\.react-testing-vercel-five.vercel.app$/
     ],
     // origin: [process.env.CLIENT_DOMAINE],
     
